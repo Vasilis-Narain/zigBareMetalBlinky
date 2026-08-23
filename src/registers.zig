@@ -12,7 +12,7 @@ pub const gpio_oe_set: *volatile u32 = @ptrFromInt(sio_base + 0x38);
 // atomic register aliases: +0x1000 xor, +0x2000 set, +0x3000 clr.
 pub const resets_reset_clr: *volatile u32 = @ptrFromInt(resets_base + 0x3000);
 pub const resets_reset_done: *volatile u32 = @ptrFromInt(resets_base + 0x8);
-pub const rst_io_bank0: u32 = 1 << 6; // verify: rp2350 shifted these vs rp2040
+pub const rst_io_bank0: u32 = 1 << 6;
 pub const rst_pads_bank0: u32 = 1 << 9;
 
 pub const funcsel_sio: u32 = 5;

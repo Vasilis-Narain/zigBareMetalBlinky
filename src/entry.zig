@@ -2,10 +2,11 @@
 const std = @import("std");
 const program_entry = @import("main.zig");
 
-// default panic override
-pub const panic = std.debug.no_panic;
+// panic override
+const panic_override = @import("panic_override.zig");
+pub const panic = std.debug.FullPanic(panic_override.sosBlink);
 
-// ---------------------------------------------------------------- linker syms
+// linker syms
 extern const __stack_top: anyopaque;
 extern var __data_start: u8;
 extern var __data_end: u8;
@@ -26,16 +27,16 @@ export const boot_block linksection(".boot_block") = [5]u32{
     0xAB123579, // PICOBIN_BLOCK_MARKER_END
 };
 
-// ---------------------------------------------------------------------- crt0
+// crt0
 export fn resetHandler() callconv(.c) noreturn {
-    const dlen = @intFromPtr(&__data_end) - @intFromPtr(&__data_start);
-    const dst: [*]u8 = @ptrCast(&__data_start);
+    const data_len = @intFromPtr(&__data_end) - @intFromPtr(&__data_start);
+    const dest: [*]u8 = @ptrCast(&__data_start);
     const src: [*]const u8 = @ptrCast(&__data_lma);
-    @memcpy(dst[0..dlen], src[0..dlen]);
+    @memcpy(dest[0..data_len], src[0..data_len]);
 
-    const blen = @intFromPtr(&__bss_end) - @intFromPtr(&__bss_start);
+    const bss_len = @intFromPtr(&__bss_end) - @intFromPtr(&__bss_start);
     const bss: [*]u8 = @ptrCast(&__bss_start);
-    @memset(bss[0..blen], 0);
+    @memset(bss[0..bss_len], 0);
 
     program_entry.main();
 }
