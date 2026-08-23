@@ -2,6 +2,7 @@
 const std = @import("std");
 const program_entry = @import("main.zig");
 
+// default panic override
 pub const panic = std.debug.no_panic;
 
 // ---------------------------------------------------------------- linker syms

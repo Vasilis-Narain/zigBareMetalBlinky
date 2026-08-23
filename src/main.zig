@@ -1,16 +1,12 @@
-const std = @import("std");
-const reg = @import("registers.zig");
+const board = @import("board_pico2.zig");
+const sio = @import("sio.zig");
+const gpio = @import("gpio.zig");
 
 // These exist to prove crt0 ran. `period` lives in .data (flash LMA -> RAM VMA),
 // `blinks` in .bss. Skip the copy/zero below and the blink rate goes obviously
 // wrong instead of failing silently.
 export var period: u32 = 1_500_000;
 var blinks: u32 = 0;
-
-fn unreset(mask: u32) void {
-    reg.resets_reset_clr.* = mask;
-    while (reg.resets_reset_done.* & mask != mask) {}
-}
 
 fn delay(cycles: u32) void {
     var i: u32 = 0;
@@ -20,18 +16,16 @@ fn delay(cycles: u32) void {
 }
 
 pub fn main() noreturn {
-    unreset(reg.rst_io_bank0 | reg.rst_pads_bank0);
+    const led = board.led;
 
-    // writinreg.0 clears iso (bit 8) — mandatory on rp2350, no rp2040 equivalent.
-    // also clears od/pde/pue and leaves ie off, which is what we want for output.
-    reg.pad_led.* = 0;
-    reg.ctrl_led.* = reg.funcsel_sio;
-    reg.gpio_oe_set.* = reg.led_mask;
+    gpio.init();
+    gpio.connectToSio(led, .output);
+    sio.enableOutput(led);
 
     while (true) {
-        reg.gpio_out_set.* = reg.led_mask;
+        sio.setHigh(led);
         delay(period);
-        reg.gpio_out_clr.* = reg.led_mask;
+        sio.setLow(led);
         delay(period);
         blinks +%= 1;
     }
