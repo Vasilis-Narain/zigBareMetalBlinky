@@ -1,4 +1,4 @@
-const reg = @import("registers");
+const reg = @import("package");
 const Pin = reg.Pin;
 
 pub fn setHigh(pin: Pin) void {

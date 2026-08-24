@@ -1,4 +1,4 @@
-const reg = @import("registers");
+const reg = @import("package");
 
 pub fn unreset(mask: u32) void {
     reg.resets_reset_clr.* = mask;

@@ -4,9 +4,15 @@ const Board = enum {
     pico_2,
 };
 
-const Registers = enum {
+const Package = enum {
     rp2350a,
+    rp2350b,
 };
+
+fn fatal(comptime format: []const u8, args: anytype) noreturn {
+    std.debug.print(format, args);
+    std.process.exit(1);
+}
 
 pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
@@ -22,13 +28,21 @@ pub fn build(b: *std.Build) void {
         .pico_2 => "src/boards/board_pico2.zig",
     };
 
-    const registers = b.option(Registers, "registers", "target registers") orelse .rp2350a;
-    const registers_src = switch (registers) {
-        .rp2350a => "src/registers/registers_rp2350a.zig",
+    const package: Package = switch (board) {
+        .pico_2 => .rp2350a,
     };
 
-    const registers_mod = b.createModule(.{
-        .root_source_file = b.path(registers_src),
+    const package_src = switch (package) {
+        .rp2350a => "src/packages/package_rp2350a.zig",
+        else => unreachable,
+    };
+
+    const opts = b.addOptions();
+    opts.addOption(Board, "board", board);
+    opts.addOption(Package, "package", package);
+
+    const package_mod = b.createModule(.{
+        .root_source_file = b.path(package_src),
         .target = target,
         .optimize = optimize,
     });
@@ -38,7 +52,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
-            .{ .name = "registers", .module = registers_mod },
+            .{ .name = "package", .module = package_mod },
         },
     });
 
@@ -48,8 +62,9 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .strip = false,
         .imports = &.{
-            .{ .name = "registers", .module = registers_mod },
+            .{ .name = "package", .module = package_mod },
             .{ .name = "board", .module = board_mod },
+            .{ .name = "build_options", .module = opts.createModule() },
         },
     });
 

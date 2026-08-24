@@ -1,4 +1,4 @@
-const reg = @import("registers");
+const reg = @import("package");
 
 pub const Pin = reg.Pin;
 
