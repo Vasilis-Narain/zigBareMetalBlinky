@@ -6,7 +6,6 @@ const Board = enum {
 
 const Package = enum {
     rp2350a,
-    rp2350b,
 };
 
 fn fatal(comptime format: []const u8, args: anytype) noreturn {
@@ -33,8 +32,7 @@ pub fn build(b: *std.Build) void {
     };
 
     const package_src = switch (package) {
-        .rp2350a => "src/packages/package_rp2350a.zig",
-        else => unreachable,
+        .rp2350a => "src/chip_packages/package_rp2350a.zig",
     };
 
     const opts = b.addOptions();
