@@ -1,7 +1,6 @@
-const reg = @import("registers.zig");
 const gpio = @import("gpio.zig");
 const sio = @import("sio.zig");
-const board = @import("board_pico2.zig");
+const board = @import("board");
 const utils = @import("utils.zig");
 
 pub fn sosBlink(_: []const u8, _: ?usize) noreturn {

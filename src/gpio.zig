@@ -1,4 +1,4 @@
-const reg = @import("registers.zig");
+const reg = @import("registers");
 const resets = @import("resets.zig");
 const Pin = reg.Pin;
 

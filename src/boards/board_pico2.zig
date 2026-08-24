@@ -1,4 +1,4 @@
-const reg = @import("registers.zig");
+const reg = @import("registers");
 
 pub const Pin = reg.Pin;
 

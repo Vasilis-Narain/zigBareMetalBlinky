@@ -1,4 +1,4 @@
-const reg = @import("registers.zig");
+const reg = @import("registers");
 const Pin = reg.Pin;
 
 pub fn setHigh(pin: Pin) void {

@@ -1,10 +1,12 @@
-//* main.zig — RP2350 (Pico 2) bare-metal blink, no pico-sdk.
+//* platform-specific entry point of the program
 const std = @import("std");
 const program_entry = @import("main.zig");
 
 // panic override
 const panic_override = @import("panic_override.zig");
 pub const panic = std.debug.FullPanic(panic_override.sosBlink);
+
+pub const target_board = .pico_2;
 
 // linker syms
 extern const __stack_top: anyopaque;

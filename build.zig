@@ -1,5 +1,9 @@
 const std = @import("std");
 
+const Board = enum {
+    pico_2,
+};
+
 pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const target = b.resolveTargetQuery(.{
@@ -9,14 +13,37 @@ pub fn build(b: *std.Build) void {
         .abi = .eabi,
     });
 
+    const board = b.option(Board, "board", "target board") orelse .pico_2;
+    const board_src = switch (board) {
+        .pico_2 => "src/boards/board_pico2.zig",
+    };
+
+    const registers_mod = b.createModule(.{
+        .root_source_file = b.path("src/registers/registers_rp2305.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    const board_mod = b.createModule(.{
+        .root_source_file = b.path(board_src),
+        .target = target,
+        .optimize = optimize,
+    });
+    board_mod.addImport("registers", registers_mod);
+
+    const root_mod = b.createModule(.{
+        .root_source_file = b.path("src/entry.zig"),
+        .target = target,
+        .optimize = optimize,
+        .strip = false,
+    });
+
+    root_mod.addImport("registers", registers_mod);
+    root_mod.addImport("board", board_mod);
+
     const exe = b.addExecutable(.{
         .name = "blinky",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/entry.zig"),
-            .target = target,
-            .optimize = optimize,
-            .strip = false,
-        }),
+        .root_module = root_mod,
     });
 
     exe.setLinkerScript(b.path("link.ld"));

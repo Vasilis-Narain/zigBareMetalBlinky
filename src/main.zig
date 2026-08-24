@@ -1,4 +1,4 @@
-const board = @import("board_pico2.zig");
+const board = @import("board");
 const sio = @import("sio.zig");
 const gpio = @import("gpio.zig");
 const utils = @import("utils.zig");
