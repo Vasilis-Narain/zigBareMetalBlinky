@@ -1,7 +1,6 @@
 const board = @import("board");
 const gpio = @import("gpio.zig");
 const sio = @import("sio.zig");
-const utils = @import("utils.zig");
 
 pub fn sosBlink(_: []const u8, _: ?usize) noreturn {
     const led = board.led;
@@ -22,5 +21,12 @@ pub fn sosBlink(_: []const u8, _: ?usize) noreturn {
         }
         i = 0;
         isFast = !isFast;
+    }
+}
+
+pub fn delay(cycles: u32) void {
+    var i: u32 = 0;
+    while (i < cycles) : (i += 1) {
+        asm volatile ("" ::: .{ .memory = true });
     }
 }

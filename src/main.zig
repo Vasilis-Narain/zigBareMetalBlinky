@@ -1,8 +1,10 @@
 const board = @import("board");
 const sio = @import("sio.zig");
 const gpio = @import("gpio.zig");
-const utils = @import("utils.zig");
 const clocks = @import("clocks.zig");
+
+// To be replaced with better delay method once timer0 wired up.
+const delay = @import("panic_override.zig").delay;
 
 export var period: u32 = 1_500_000;
 pub var blinks: u32 = 0;
@@ -12,13 +14,14 @@ pub fn main() noreturn {
 
     gpio.connectToSio(led, .output);
     sio.enableOutput(led);
-    clocks.initXosc();
+
+    clocks.init();
 
     while (true) {
         sio.setHigh(led);
-        utils.delay(period);
+        delay(period);
         sio.setLow(led);
-        utils.delay(period);
+        delay(period);
         blinks +%= 1;
     }
 }

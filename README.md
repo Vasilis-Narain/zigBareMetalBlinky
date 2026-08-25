@@ -1,6 +1,12 @@
 ## Bare-metal Blinky on Raspberry Pico 2 (RP2350)
 
-Much more code than necessary for blinky as I'm experimenting.
+Way more code than necessary for blinky... I'm experimenting different sw architectures and practicing reading spec.
+
+Specifically this project aims to teach me:
+
+- linker scripts
+- clocks (i've written a simple profiler that uses rdtsc(), this takes it lower albeit with no os in the way)
+- atomic busses
 
 Requires `picotool` installed on the system for full build. Minimum installation is fine as it is only used for the final `uf2` conversion.
 

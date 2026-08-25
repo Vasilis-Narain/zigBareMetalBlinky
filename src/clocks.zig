@@ -8,20 +8,24 @@ var initialized = false;
 
 const startup_delay: u32 = (((board.xosc_hz / 1000) + 128) / 256) * board.xosc_startup_multiplier;
 
+comptime {
+    if (startup_delay >= 1 << 13)
+        @compileError("xosc `startup delay` must be < 8192");
+    if (board.xosc_hz % 1_000_000 != 0)
+        @compileError("`xosc_hz` must be a whole number of MHz for an exact 1 MHz tick");
+}
+
 const freq_range: u12 = switch (board.xosc_hz) {
     1_000_000...15_000_000 => 0xaa0,
     15_000_001...30_000_000 => 0xaa1,
     30_000_001...60_000_000 => 0xaa2,
-    else => 0xaa3,
+    else => @compileError("xosc_hz outside supported range"),
 };
 
 const xosc_clksrc: u32 = 0x2;
 
-const clk_ref_hz: u32 = board.xosc_hz / reg.clk_ref_div;
-const ticks_cycles: u32 = clk_ref_hz / 1_000_000;
+const ticks_cycles: u32 = board.xosc_hz / 1_000_000;
 
-/// This function takes time in the order of milliseconds.
-/// Define freq range -> set startup_delay -> set enable bit -> poll status.stable
 fn initXosc() void {
     if (reg.xosc.status.stable == 1) return;
 
@@ -37,12 +41,14 @@ fn initXosc() void {
 
 fn refToXosc() void {
     reg.clk_ref_ctrl.* = xosc_clksrc;
+    reg.clk_ref_div.* = 1 << 16; // 16 is INT lsb from spec.
 
     while (reg.clk_ref_selected.* & (1 << xosc_clksrc) == 0) {}
 }
 
 pub fn init() void {
     if (initialized) return;
+
     initXosc();
     refToXosc();
 
