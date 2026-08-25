@@ -1,23 +1,91 @@
+//* File matching spec from https://pip-assets.raspberrypi.com/categories/1214-rp2350/documents/RP-008373-DS-2-rp2350-datasheet.pdf
+//* Not everything is here, adding things as needed.
+
+// ALIASES
+pub const reg_alias_xor_bits: u32 = 0x1000;
+pub const reg_alias_set_bits: u32 = 0x2000;
+pub const reg_alias_clr_bits: u32 = 0x3000;
+
+// BASES
 pub const resets_base: u32 = 0x40020000;
 pub const io_bank0_base: u32 = 0x40028000;
 pub const pads_bank0_base: u32 = 0x40038000;
 pub const sio_base: u32 = 0xd0000000;
+pub const tick_base: u32 = 0x4010800;
+pub const timer0_base: u32 = 0x400b0000;
+pub const timer1_base: u32 = 0x400b8000;
+pub const xosc_base: u32 = 0x40048000;
 
-// sio on rp2350 interleaves the _hi variants, so these offsets differ from rp2040.
+// XOSC
+pub const Xosc = extern struct {
+    ctrl: Ctrl,
+    status: Status,
+    dormant: u32,
+    startup: u32,
+    count: u32,
+
+    // NOTE(vasilis): all writes to a packed struct must be done in one go, not per field.
+    // Make a local const with desired fields and then write. Preferably make helpers to avoid
+    // confusion.
+    const Ctrl = packed struct(u32) {
+        freq_range: u12,
+        enable: u12,
+        __reserved: u8 = 0,
+    };
+
+    const Status = packed struct(u32) {
+        freq_range: u2,
+        __reserved2: u10 = 0,
+        enabled: u1,
+        __reserved13: u11 = 0,
+        badwrite: u1,
+        __reserved25: u6 = 0,
+        stable: u1,
+    };
+
+    pub const ctrl_enable: u12 = 0xfab;
+    pub const ctrl_disable: u12 = 0xd1e;
+    pub const ctrl_freq_range_1_15mhz = 0xaa0;
+};
+pub const xosc: *volatile Xosc = @ptrFromInt(xosc_base);
+
+// TICKS Generator
+const TickGenerator = extern struct {
+    time_hw: u32,
+    time_lw: u32,
+    time_hr: u32,
+    time_lr: u32,
+    alarm: [4]u32,
+    armed: u32,
+    time_raw_h: u32,
+    time_raw_l: u32,
+    dbg_pause: u32,
+    pause: u32,
+    locked: u32,
+    source: u32,
+    int_r: u32,
+    int_e: u32,
+    int_f: u32,
+    int_s: u32,
+};
+pub const timer0: *volatile TickGenerator = @ptrFromInt(timer0_base);
+pub const timer1: *volatile TickGenerator = @ptrFromInt(timer1_base);
+
+// GPIO
+const num_gpio_slots = 48;
 pub const gpio_in: *volatile u32 = @ptrFromInt(sio_base + 0x04);
 pub const gpio_out_set: *volatile u32 = @ptrFromInt(sio_base + 0x18);
 pub const gpio_out_clr: *volatile u32 = @ptrFromInt(sio_base + 0x20);
 pub const gpio_oe_set: *volatile u32 = @ptrFromInt(sio_base + 0x38);
 
-// atomic register aliases: +0x1000 xor, +0x2000 set, +0x3000 clr.
+// RESETS
 pub const resets_reset_clr: *volatile u32 = @ptrFromInt(resets_base + 0x3000);
 pub const resets_reset_done: *volatile u32 = @ptrFromInt(resets_base + 0x8);
 pub const rst_io_bank0: u32 = 1 << 6;
 pub const rst_pads_bank0: u32 = 1 << 9;
 
+// FUNCSEL
 pub const funcsel_sio: u32 = 5;
-
-const num_gpio_slots = 48;
 
 const Gpio = extern struct {
     status: u32,
