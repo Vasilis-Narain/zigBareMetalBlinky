@@ -2,19 +2,32 @@
 //* Not everything is here, adding things as needed.
 
 // ALIASES
-pub const reg_alias_xor_bits: u32 = 0x1000;
-pub const reg_alias_set_bits: u32 = 0x2000;
-pub const reg_alias_clr_bits: u32 = 0x3000;
+pub const Alias = enum(u32) {
+    rw = 0x0000,
+    xor = 0x1000,
+    set = 0x2000,
+    clr = 0x3000,
+};
+
+pub fn alias(comptime op: Alias, ptr: anytype) @TypeOf(ptr) {
+    return @ptrFromInt(@intFromPtr(ptr) + @intFromEnum(op));
+}
 
 // BASES
 pub const resets_base: u32 = 0x40020000;
 pub const io_bank0_base: u32 = 0x40028000;
 pub const pads_bank0_base: u32 = 0x40038000;
 pub const sio_base: u32 = 0xd0000000;
-pub const tick_base: u32 = 0x4010800;
+pub const ticks_base: u32 = 0x4010800;
 pub const timer0_base: u32 = 0x400b0000;
 pub const timer1_base: u32 = 0x400b8000;
 pub const xosc_base: u32 = 0x40048000;
+pub const clk_base: u32 = 0x40010000;
+
+// CLOCKS
+pub const clk_ref_ctrl: *volatile u32 = @ptrFromInt(clk_base + 0x30);
+pub const clk_ref_div: *volatile u32 = @ptrFromInt(clk_base + 0x34);
+pub const clk_ref_selected: *volatile u32 = @ptrFromInt(clk_base + 0x38);
 
 // XOSC
 pub const Xosc = extern struct {
@@ -25,29 +38,37 @@ pub const Xosc = extern struct {
     count: u32,
 
     // NOTE(vasilis): all writes to a packed struct must be done in one go, not per field.
-    // Make a local const with desired fields and then write. Preferably make helpers to avoid
-    // confusion.
-    const Ctrl = packed struct(u32) {
-        freq_range: u12,
-        enable: u12,
+    // Make a local const with desired fields and then write. Use the alias function above
+    // for actual bit writes. No issue for reading.
+    pub const Ctrl = packed struct(u32) {
+        freq_range: u12 = 0,
+        enable: u12 = 0,
         __reserved: u8 = 0,
     };
 
-    const Status = packed struct(u32) {
-        freq_range: u2,
+    pub const Status = packed struct(u32) {
+        freq_range: u2 = 0,
         __reserved2: u10 = 0,
-        enabled: u1,
+        enabled: u1 = 0,
         __reserved13: u11 = 0,
-        badwrite: u1,
+        badwrite: u1 = 0,
         __reserved25: u6 = 0,
-        stable: u1,
+        stable: u1 = 0,
     };
 
     pub const ctrl_enable: u12 = 0xfab;
     pub const ctrl_disable: u12 = 0xd1e;
-    pub const ctrl_freq_range_1_15mhz = 0xaa0;
 };
 pub const xosc: *volatile Xosc = @ptrFromInt(xosc_base);
+
+// TICKS
+pub const TicksCtrl = packed struct(u32) {
+    enable: u1 = 0,
+    running: u1 = 0,
+    __reserved: u30 = 0,
+};
+pub const ticks_timer0_ctrl: *volatile TicksCtrl = @ptrFromInt(ticks_base + 0x18);
+pub const ticks_timer0_cycles: *volatile u32 = @ptrFromInt(ticks_base + 0x1c);
 
 // TICKS Generator
 const TickGenerator = extern struct {
@@ -81,6 +102,8 @@ pub const gpio_oe_set: *volatile u32 = @ptrFromInt(sio_base + 0x38);
 // RESETS
 pub const resets_reset_clr: *volatile u32 = @ptrFromInt(resets_base + 0x3000);
 pub const resets_reset_done: *volatile u32 = @ptrFromInt(resets_base + 0x8);
+pub const rst_timer0: u32 = 1 << 23;
+pub const rst_timer1: u32 = 1 << 24;
 pub const rst_io_bank0: u32 = 1 << 6;
 pub const rst_pads_bank0: u32 = 1 << 9;
 

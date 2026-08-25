@@ -2,6 +2,9 @@ const reg = @import("package");
 
 pub const Pin = reg.Pin;
 
+pub const xosc_hz: u32 = 12_000_000;
+pub const xosc_startup_multiplier: u32 = 1;
+
 pub const adc0 = reg.adc0;
 pub const adc1 = reg.adc1;
 pub const adc2 = reg.adc2;
