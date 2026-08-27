@@ -4,9 +4,10 @@ Way more code than necessary for blinky... I'm experimenting different sw archit
 
 Specifically this project aims to teach me:
 
+- microcontrollers
+- reading spec
 - linker scripts
 - clocks (i've written a simple profiler that uses rdtsc(), this takes it lower albeit with no os in the way)
-- atomic busses
 
 Requires `picotool` installed on the system for full build. Minimum installation is fine as it is only used for the final `uf2` conversion.
 

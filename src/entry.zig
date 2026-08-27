@@ -1,4 +1,4 @@
-//* platform-specific entry point of the program
+//! platform-specific entry point of the program
 const std = @import("std");
 const program_entry = @import("main.zig");
 
