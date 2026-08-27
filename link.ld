@@ -8,7 +8,7 @@ __stack_top = ORIGIN(RAM) + LENGTH(RAM);
 
 SECTIONS
 {
-    .vector_table : { KEEP(*(.vector_table)) } > FLASH
+    .vector_table : ALIGN(512) { KEEP(*(.vector_table)) } > FLASH
     .boot_block : { KEEP(*(.boot_block)) } > FLASH
 
     .text : {

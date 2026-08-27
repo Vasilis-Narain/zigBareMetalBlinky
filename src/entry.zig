@@ -4,9 +4,8 @@ const program_entry = @import("main.zig");
 
 // panic override
 const panic_override = @import("panic_override.zig");
-pub const panic = std.debug.FullPanic(panic_override.sosBlink);
-
-pub const target_board = .pico_2;
+const sosBlink = panic_override.sosBlink;
+pub const panic = std.debug.FullPanic(sosBlink);
 
 // linker syms
 extern const __stack_top: anyopaque;
@@ -16,9 +15,14 @@ extern var __data_lma: u8;
 extern var __bss_start: u8;
 extern var __bss_end: u8;
 
-export const vector_table linksection(".vector_table") = [2]*const anyopaque{
-    &__stack_top,
-    &resetHandler,
+const num_vtable_entries = 16 + 58; //16 pre irq, 58 irq
+
+export const vector_table linksection(".vector_table") = blk: {
+    var vector: [num_vtable_entries]*const anyopaque = @splat(&defaultHandler);
+    vector[0] = &__stack_top;
+    vector[1] = &resetHandler;
+    vector[16] = &timer0IrqHandler;
+    break :blk vector;
 };
 
 export const boot_block linksection(".boot_block") = [5]u32{
@@ -29,7 +33,14 @@ export const boot_block linksection(".boot_block") = [5]u32{
     0xAB123579, // PICOBIN_BLOCK_MARKER_END
 };
 
-// crt0
+/// Check for debug probe if not just sosBlink.
+export fn defaultHandler() callconv(.c) noreturn {
+    const dhcsr: *volatile u32 = @ptrFromInt(0xe000edf0);
+    if (dhcsr.* & 1 != 0) asm volatile ("bkpt #0");
+    sosBlink("", null);
+}
+
+/// crt0
 export fn resetHandler() callconv(.c) noreturn {
     const data_len = @intFromPtr(&__data_end) - @intFromPtr(&__data_start);
     const dest: [*]u8 = @ptrCast(&__data_start);
@@ -42,3 +53,6 @@ export fn resetHandler() callconv(.c) noreturn {
 
     program_entry.main();
 }
+
+/// timer0 irq handler. For future use :D
+export fn timer0IrqHandler() callconv(.c) void {}
