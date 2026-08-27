@@ -15,9 +15,9 @@ pub fn sosBlink(_: []const u8, _: ?usize) noreturn {
         var i: u32 = 0;
         while (i < 3) : (i += 1) {
             sio.setHigh(led);
-            utils.delay(local_period);
+            delay(local_period);
             sio.setLow(led);
-            utils.delay(local_period);
+            delay(local_period);
         }
         i = 0;
         isFast = !isFast;

@@ -4,7 +4,11 @@ const Ctrl = Xosc.Ctrl;
 const board = @import("board");
 const resets = @import("resets.zig");
 
-var initialized = false;
+const Initialized = struct {
+    timer0: bool = false,
+    timer1: bool = false,
+};
+pub var initialized: Initialized = .{};
 
 const startup_delay: u32 = (((board.xosc_hz / 1000) + 128) / 256) * board.xosc_startup_multiplier;
 
@@ -34,7 +38,8 @@ fn initXosc() void {
     reg.xosc.startup = startup_delay;
 
     const enable_mask: Ctrl = .{ .enable = Xosc.ctrl_enable };
-    reg.alias(.set, reg.xosc).ctrl = enable_mask;
+    const xosc_set_alias = reg.alias(.set, reg.xosc);
+    xosc_set_alias.ctrl = enable_mask;
 
     while (reg.xosc.status.stable == 0) {}
 }
@@ -46,17 +51,62 @@ fn refToXosc() void {
     while (reg.clk_ref_selected.* & (1 << xosc_clksrc) == 0) {}
 }
 
-pub fn init() void {
-    if (initialized) return;
+pub const TimerEnum = enum {
+    timer0,
+    timer1,
+
+    fn isInitialised(timer: @This()) bool {
+        return switch (timer) {
+            .timer0 => initialized.timer0,
+            .timer1 => initialized.timer1,
+        };
+    }
+
+    fn getPtr(timer: @This()) *volatile reg.TickGenerator {
+        return switch (timer) {
+            .timer0 => reg.timer0,
+            .timer1 => reg.timer1,
+        };
+    }
+};
+
+pub const TimerHandle = struct {
+    type: TimerEnum,
+    ptr: *volatile reg.TickGenerator,
+};
+
+pub fn init(timer: TimerEnum) TimerHandle {
+    const result: TimerHandle = .{
+        .type = timer,
+        .ptr = timer.getPtr(),
+    };
+
+    if (timer.isInitialised()) return result;
 
     initXosc();
     refToXosc();
 
-    resets.unreset(reg.rst_timer0);
-    reg.ticks_timer0_cycles.* = ticks_cycles;
-    const setup: reg.TicksCtrl = .{ .enable = 1 };
-    reg.ticks_timer0_ctrl.* = setup;
-    while (reg.ticks_timer0_ctrl.running == 0) {}
+    switch (timer) {
+        .timer0 => {
+            resets.unreset(reg.rst_timer0);
 
-    initialized = true;
+            reg.ticks_timer0_cycles.* = ticks_cycles;
+            const setup: reg.TicksCtrl = .{ .enable = 1 };
+            reg.ticks_timer0_ctrl.* = setup;
+            while (reg.ticks_timer0_ctrl.running == 0) {}
+
+            initialized.timer0 = true;
+        },
+        .timer1 => {
+            resets.unreset(reg.rst_timer1);
+
+            reg.ticks_timer1_cycles.* = ticks_cycles;
+            const setup: reg.TicksCtrl = .{ .enable = 1 };
+            reg.ticks_timer1_ctrl.* = setup;
+            while (reg.ticks_timer1_ctrl.running == 0) {}
+
+            initialized.timer1 = true;
+        },
+    }
+    return result;
 }

@@ -69,9 +69,13 @@ pub const TicksCtrl = packed struct(u32) {
 };
 pub const ticks_timer0_ctrl: *volatile TicksCtrl = @ptrFromInt(ticks_base + 0x18);
 pub const ticks_timer0_cycles: *volatile u32 = @ptrFromInt(ticks_base + 0x1c);
+pub const ticks_timer0_count: *volatile u32 = @ptrFromInt(ticks_base + 0x20);
+pub const ticks_timer1_ctrl: *volatile TicksCtrl = @ptrFromInt(ticks_base + 0x24);
+pub const ticks_timer1_cycles: *volatile u32 = @ptrFromInt(ticks_base + 0x28);
+pub const ticks_timer1_count: *volatile u32 = @ptrFromInt(ticks_base + 0x2c);
 
 // TICKS Generator
-const TickGenerator = extern struct {
+pub const TickGenerator = extern struct {
     time_hw: u32,
     time_lw: u32,
     time_hr: u32,

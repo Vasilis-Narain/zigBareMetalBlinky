@@ -1,12 +1,9 @@
 const board = @import("board");
 const sio = @import("sio.zig");
 const gpio = @import("gpio.zig");
-const clocks = @import("clocks.zig");
+const time = @import("time.zig");
 
-// To be replaced with better delay method once timer0 wired up.
-const delay = @import("panic_override.zig").delay;
-
-export var period: u32 = 1_500_000;
+export var wait_ms: u32 = 500;
 pub var blinks: u32 = 0;
 
 pub fn main() noreturn {
@@ -15,13 +12,17 @@ pub fn main() noreturn {
     gpio.connectToSio(led, .output);
     sio.enableOutput(led);
 
-    clocks.init();
+    const timer = time.init(.timer0);
+    var next = timer.now32();
 
     while (true) {
+        next = next.plus(time.fromMs(wait_ms));
         sio.setHigh(led);
-        delay(period);
+        timer.sleepUntil32(next);
+
+        next = next.plus(time.fromMs(wait_ms));
         sio.setLow(led);
-        delay(period);
+        timer.sleepUntil32(next);
         blinks +%= 1;
     }
 }
