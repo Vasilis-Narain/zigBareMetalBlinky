@@ -46,7 +46,7 @@ fn initXosc() void {
 
 fn refToXosc() void {
     reg.clk_ref_ctrl.* = xosc_clksrc;
-    reg.clk_ref_div.* = 1 << 16; // 16 is INT lsb from spec.
+    reg.clk_ref_div.* = reg.clk_ref_div_int_bit;
 
     while (reg.clk_ref_selected.* & (1 << xosc_clksrc) == 0) {}
 }
@@ -70,13 +70,16 @@ pub const TimerEnum = enum {
     }
 };
 
-pub const TimerHandle = struct {
+pub const TickGeneratorHandle = struct {
     type: TimerEnum,
     ptr: *volatile reg.TickGenerator,
 };
 
-pub fn init(timer: TimerEnum) TimerHandle {
-    const result: TimerHandle = .{
+/// Returns a handle to the `TickGenerator` for the chosen `timer`.
+/// Initializes it if not initialised.
+/// The reason to use more than one is for concurrency between cores.
+pub fn init(timer: TimerEnum) TickGeneratorHandle {
+    const result: TickGeneratorHandle = .{
         .type = timer,
         .ptr = timer.getPtr(),
     };

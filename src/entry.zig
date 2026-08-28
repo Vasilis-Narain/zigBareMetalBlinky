@@ -42,6 +42,9 @@ export fn defaultHandler() callconv(.c) noreturn {
 
 /// crt0
 export fn resetHandler() callconv(.c) noreturn {
+    const vtor: *volatile u32 = @ptrFromInt(0xe000ed08);
+    vtor.* = @intFromPtr(&vector_table);
+
     const data_len = @intFromPtr(&__data_end) - @intFromPtr(&__data_start);
     const dest: [*]u8 = @ptrCast(&__data_start);
     const src: [*]const u8 = @ptrCast(&__data_lma);

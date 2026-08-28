@@ -1,6 +1,13 @@
 //! User facing time API. Usage for simple blinky program:
 //!
 //! ```{zig}
+//! const board = @import("board");
+//! const sio = @import("sio.zig");
+//! const gpio = @import("gpio.zig");
+//! const time = @import("time.zig");
+//!
+//! const wait_ms: u32 = 500;
+//!
 //! pub fn main() noreturn {
 //!     const led = board.led;
 //!
@@ -22,16 +29,56 @@
 //! }
 //! ```
 const clocks = @import("clocks.zig");
-const TimerHandle = clocks.TimerHandle;
+const TickGeneratorHandle = clocks.TickGeneratorHandle;
 pub const TimerEnum = clocks.TimerEnum;
+
+/// Call this before using other timer functions.
+pub fn init(timer: TimerEnum) Timer {
+    return .{
+        .handle = clocks.init(timer),
+    };
+}
 
 pub const Duration32 = struct {
     us: u32,
 };
 
-pub fn fromMs(ms: u32) Duration32 {
+const std = @import("std");
+const builtin = std.builtin;
+
+/// Input must be `f32`,`u32`, `comptime_int`, `comptime_float`
+///
+/// Does saturating multiplication. This means if
+/// `ms` is too large the returned `Duration32` struct
+/// will have `us = 1 << 31`.
+pub fn fromMs(ms: anytype) Duration32 {
+    const T = @TypeOf(ms);
+
+    const isFloat = switch (T) {
+        f32, comptime_float => true,
+        u32, comptime_int => false,
+        else => @compileError("ANYTYPE_CHECK: `fromMs(ms: anytype)` only accepts types that can coerce `f32` or `u32`"),
+    };
+
+    const result: u32 = blk: {
+        if (T == comptime_int and !(ms > 0)) break :blk 0;
+        const max_us = 1 << 31;
+        if (isFloat) {
+            if (!(ms > 0)) break :blk 0;
+            const us_float = ms * 1000;
+
+            if (us_float >= @as(comptime_float, max_us)) {
+                break :blk max_us;
+            } else {
+                break :blk @intFromFloat(@trunc(us_float));
+            }
+        } else {
+            break :blk @min(ms *| 1000, max_us);
+        }
+    };
+
     return .{
-        .us = ms * 1000,
+        .us = result,
     };
 }
 
@@ -49,14 +96,8 @@ pub const Instant32 = struct {
     }
 };
 
-pub fn init(timer: TimerEnum) Timer {
-    return .{
-        .handle = clocks.init(timer),
-    };
-}
-
 pub const Timer = struct {
-    handle: TimerHandle,
+    handle: TickGeneratorHandle,
 
     pub fn now32(self: @This()) Instant32 {
         return .{

@@ -18,7 +18,7 @@ pub const resets_base: u32 = 0x40020000;
 pub const io_bank0_base: u32 = 0x40028000;
 pub const pads_bank0_base: u32 = 0x40038000;
 pub const sio_base: u32 = 0xd0000000;
-pub const ticks_base: u32 = 0x4010800;
+pub const ticks_base: u32 = 0x40108000;
 pub const timer0_base: u32 = 0x400b0000;
 pub const timer1_base: u32 = 0x400b8000;
 pub const xosc_base: u32 = 0x40048000;
@@ -28,6 +28,9 @@ pub const clk_base: u32 = 0x40010000;
 pub const clk_ref_ctrl: *volatile u32 = @ptrFromInt(clk_base + 0x30);
 pub const clk_ref_div: *volatile u32 = @ptrFromInt(clk_base + 0x34);
 pub const clk_ref_selected: *volatile u32 = @ptrFromInt(clk_base + 0x38);
+
+///bit for int part of divisor
+pub const clk_ref_div_int_bit: u32 = 1 << 16;
 
 // XOSC
 pub const Xosc = extern struct {
@@ -125,9 +128,21 @@ const IoBank0 = extern struct {
 
 const PadsBank0 = extern struct {
     voltage_select: u32,
-    gpio: [num_gpio_slots]u32,
+    gpio: [num_gpio_slots]Pad,
     swclk: u32,
     swd: u32,
+};
+
+pub const Pad = packed struct(u32) {
+    slewfast: u1 = 0,
+    schmitt: u1 = 0,
+    pde: u1 = 0,
+    pue: u1 = 0,
+    drive: u2 = 0,
+    ie: u1 = 0,
+    od: u1 = 0,
+    iso: u1 = 0,
+    _reserved: u23 = 0,
 };
 
 pub const io_bank0: *volatile IoBank0 = @ptrFromInt(io_bank0_base);
