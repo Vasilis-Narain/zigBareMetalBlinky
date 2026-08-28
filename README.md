@@ -1,4 +1,6 @@
-## Bare-metal Blinky on Raspberry Pico 2 (RP2350)
+## Bare-metal Blinky on Raspberry Pico 2 in Zig (RP2350)
+
+Timed using the crystal oscillator present on the board.
 
 Way more code than necessary for blinky... I'm experimenting different sw architectures and practicing reading spec.
 
